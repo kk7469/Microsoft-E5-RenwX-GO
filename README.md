@@ -3,8 +3,10 @@
 用 Go 重写的 Microsoft 365 E5 Graph API 保活续订服务，对齐原项目核心能力。
 
 原项目：https://github.com/hongyonghan/Docker_Microsoft365_E5_Renew_X
+
 账号注册相关请参考原作者博客：
 https://blog.csdn.net/qq_33212020/article/details/119747634
+
 ## 功能
 
 - 管理员密码登录（默认 `123456`，路由等价 `/Admin/Login`）
