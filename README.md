@@ -32,13 +32,13 @@ PORT=1066 ADMIN_PASSWORD=123456 DATA_PATH=data/store.json go run .
 访问 `http://localhost:1066`
 
 ## Docker
-①
+```bash
+# 拉库
 git clone https://github.com/kk7469/Microsoft-E5-RenwX-GO.git
-②
 cd Microsoft-E5-RenwX-GO
-③
-docker build -t e5renewx-go:latest .（有个.不能删除）
-④
+# 构建镜像，后面的.不能删除
+docker build -t e5renewx-go:latest .
+# 运行容器
 docker run -d \
   --name e5renewx-go \
   --restart unless-stopped \
@@ -48,7 +48,7 @@ docker run -d \
   -e SESSION_SECRET=自定义随机字符串 \
   -v /opt/Microsoft-E5-RenwX-GO/data:/app/data \
   e5renewx-go:latest
-
+```
 
 ## 添加运行账号
 
