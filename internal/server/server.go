@@ -6,12 +6,14 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"runtime"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"e5renewx/internal/config"
@@ -20,6 +22,8 @@ import (
 	"e5renewx/internal/scheduler"
 	"e5renewx/internal/store"
 )
+
+const appVersion = "1.6.929"
 
 type Server struct {
 	cfg   config.Config
@@ -144,6 +148,17 @@ func (s *Server) handleOverview(w http.ResponseWriter, r *http.Request) {
 	}
 	var ms runtime.MemStats
 	runtime.ReadMemStats(&ms)
+	cpuCount := cpuCount()
+	load := loadAverage()
+	memTotal := memTotal()
+	memUsed := ms.Sys*1024*1024 - memFree()
+	diskTotal, diskFree, _ := diskUsage(".")
+	op := "Linux"
+	if runtime.GOOS == "darwin" {
+		op = "macOS"
+	} else if runtime.GOOS == "windows" {
+		op = "Windows"
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"accounts":     len(accs),
 		"running":      running,
@@ -162,6 +177,19 @@ func (s *Server) handleOverview(w http.ResponseWriter, r *http.Request) {
 		"icpText":      s.store.Settings().ICPText,
 		"icpLink":      s.store.Settings().ICPLink,
 		"catalogCount": len(graph.Catalog()),
+		"cpuCount":     cpuCount,
+		"load1":        load[0],
+		"load5":        load[1],
+		"load15":       load[2],
+		"memTotalGB":   float64(memTotal) / 1024 / 1024 / 1024,
+		"memUsedGB":    float64(memUsed) / 1024 / 1024 / 1024,
+		"diskTotalGB":  float64(diskTotal) / 1024 / 1024 / 1024,
+		"diskFreeGB":   float64(diskFree) / 1024 / 1024 / 1024,
+		"os":           op,
+		"kernel":       kernelRelease(),
+		"hostname":     hostname(),
+		"version":      appVersion,
+		"uptime":       uptimeSeconds(),
 	})
 }
 
@@ -484,6 +512,124 @@ func (s *Server) withSecurity(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func cpuCount() int {
+	n := runtime.NumCPU()
+	if n <= 0 {
+		return 1
+	}
+	return n
+}
+
+func loadAverage() [3]float64 {
+	result := [3]float64{0, 0, 0}
+	var buf [3]uint32
+	_ = sysctlBuffer("kern.smp.ncpus", &buf)
+	n := uint64(buf[0])
+	if n > 0 {
+		result[0] = float64(n)
+	}
+	paths := [3]string{
+		"/proc/loadavg",
+		"kernel.loadavg",
+		"",
+	}
+	for _, p := range paths[:2] {
+		data, err := os.ReadFile(p)
+		if err == nil {
+			var f1, f2, f3 float64
+			fmt.Sscanf(string(data), "%lf %lf %lf", &f1, &f2, &f3)
+			result[0] = f1
+			result[1] = f2
+			result[2] = f3
+			break
+		}
+	}
+	return result
+}
+
+func kernelRelease() string {
+	var uname syscall.Utsname
+	if err := syscall.Uname(&uname); err != nil {
+		return ""
+	}
+	s := make([]byte, 0, len(uname.Release))
+	for _, b := range uname.Release {
+		if b == 0 {
+			break
+		}
+		s = append(s, byte(b))
+	}
+	return string(s)
+}
+
+func kernelVersion() string {
+	data, err := os.ReadFile("/proc/version")
+	if err == nil {
+		return strings.TrimSpace(string(data))
+	}
+	return kernelRelease()
+}
+
+func hostname() string {
+	h, _ := os.Hostname()
+	return h
+}
+
+func uptimeSeconds() float64 {
+	data, err := os.ReadFile("/proc/uptime")
+	if err != nil {
+		return 0
+	}
+	var u float64
+	fmt.Sscanf(string(data), "%f", &u)
+	return u
+}
+
+func sysctlBuffer(key string, buf *[3]uint32) error {
+	return fmt.Errorf("not implemented")
+}
+
+func memTotal() uint64 {
+	total, _ := osReadMeminfo("MemTotal")
+	if total > 0 {
+		return total * 1024
+	}
+	return 0
+}
+
+func memFree() uint64 {
+	free, _ := osReadMeminfo("MemFree")
+	buffers, _ := osReadMeminfo("Buffers")
+	cached, _ := osReadMeminfo("Cached")
+	return (free + buffers + cached) * 1024
+}
+
+func osReadMeminfo(key string) (uint64, error) {
+	data, err := os.ReadFile("/proc/meminfo")
+	if err != nil {
+		return 0, err
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		var k string
+		var v uint64
+		fmt.Sscanf(line, "%s %d kB", &k, &v)
+		if k == key {
+			return v, nil
+		}
+	}
+	return 0, fmt.Errorf("not found")
+}
+
+func diskUsage(path string) (uint64, uint64, error) {
+	var stat syscall.Statfs_t
+	if err := syscall.Statfs(path, &stat); err != nil {
+		return 0, 0, err
+	}
+	total := stat.Blocks * uint64(stat.Bsize)
+	free := stat.Bavail * uint64(stat.Bsize)
+	return total, free, nil
 }
 
 func writeJSON(w http.ResponseWriter, code int, v any) {

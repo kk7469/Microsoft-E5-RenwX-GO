@@ -169,20 +169,41 @@ function homePage() {
     ]),
     h("div", { class: "grid2" }, [
       h("div", { class: "panel" }, [
-        h("h3", {}, "系统状态"),
-        p("Goroutines", o.goroutines),
-        p("内存 Alloc", `${(o.allocMB || 0).toFixed(1)} MB`),
-        p("Go 版本", o.goVersion),
-        p("API 目录", o.catalogCount),
-        p("上次特赦", formatTime(o.lastPardon)),
-        p("上次日报", formatTime(o.lastReport)),
+        h("h3", {}, "服务器配置"),
+        p("操作系统", `${o.os || "-"} ${o.kernel || ""}`),
+        p("主机名", o.hostname || "-"),
+        p("应用版本", o.version || "-"),
+        p("Go 版本", o.goVersion || "-"),
       ]),
       h("div", { class: "panel" }, [
-        h("h3", {}, "公告"),
-        h("div", { class: "notice" }, o.notice || "暂无公告"),
+        h("h3", {}, "资源占用"),
+        p("CPU", `${o.cpuCount || 0} 核`),
+        p("内存总容量", `${(o.memTotalGB || 0).toFixed(1)} GB`),
+        p("磁盘总容量", `${(o.diskTotalGB || 0).toFixed(1)} GB`),
+        p("运行时间", formatUptime(o.uptime || 0)),
+      ]),
+    ]),
+    h("div", { class: "grid2" }, [
+      h("div", { class: "panel" }, [
+        h("h3", {}, "内存"),
+        p("已使用", `${(o.memUsedGB || 0).toFixed(1)} GB / ${(o.memTotalGB || 0).toFixed(1)} GB`),
+      ]),
+      h("div", { class: "panel" }, [
+        h("h3", {}, "磁盘"),
+        p("可用空间", `${(o.diskFreeGB || 0).toFixed(1)} GB / ${(o.diskTotalGB || 0).toFixed(1)} GB`),
       ]),
     ]),
   ]);
+}
+
+function formatUptime(seconds) {
+  if (!seconds) return "-";
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  if (days > 0) return `${days}天${hours}小时`;
+  if (hours > 0) return `${hours}小时${mins}分钟`;
+  return `${mins}分钟`;
 }
 
 function metric(label, value) {
