@@ -25,6 +25,7 @@ type APIDef struct {
 	Permission  string   `json:"permission"`
 	Modes       []string `json:"modes"`
 	RandomBody  bool     `json:"randomBody"`
+	Recommended bool     `json:"recommended"`
 	Description string   `json:"description"`
 }
 
@@ -62,6 +63,7 @@ type CallLog struct {
 	Path      string    `json:"path"`
 	Status    int       `json:"status"`
 	OK        bool      `json:"ok"`
+	Skipped   bool      `json:"skipped"`
 	Message   string    `json:"message"`
 	Duration  int64     `json:"durationMs"`
 	CreatedAt time.Time `json:"createdAt"`

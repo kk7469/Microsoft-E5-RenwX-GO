@@ -27,28 +27,42 @@ func New() *Client {
 	return &Client{http: &http.Client{Timeout: 45 * time.Second}}
 }
 
+func resolveTenant(acc *model.Account) string {
+	t := strings.TrimSpace(acc.Tenant)
+	if t != "" && !strings.EqualFold(t, "common") && !strings.EqualFold(t, "consumers") {
+		return t
+	}
+	if i := strings.LastIndex(acc.UPN, "@"); i >= 0 {
+		domain := strings.TrimSpace(acc.UPN[i+1:])
+		if domain != "" {
+			return domain
+		}
+	}
+	return "organizations"
+}
+
 func (c *Client) EnsureToken(acc *model.Account) error {
 	if acc.AccessToken != "" && time.Now().Add(2*time.Minute).Before(acc.TokenExpiry) {
 		return nil
 	}
-	tenant := acc.Tenant
-	if tenant == "" {
-		tenant = "common"
-	}
+	tenant := resolveTenant(acc)
 	form := url.Values{}
 	form.Set("client_id", acc.ClientID)
 	form.Set("scope", "https://graph.microsoft.com/.default")
 	if acc.Mode == model.ModeLogin {
-		form.Set("grant_type", "password")
-		form.Set("username", acc.UPN)
-		form.Set("password", acc.Secret)
-		form.Set("scope", "https://graph.microsoft.com/.default offline_access")
+		if acc.RefreshToken != "" {
+			form.Set("grant_type", "refresh_token")
+			form.Set("refresh_token", acc.RefreshToken)
+			form.Set("scope", "https://graph.microsoft.com/.default offline_access")
+		} else {
+			form.Set("grant_type", "password")
+			form.Set("username", acc.UPN)
+			form.Set("password", acc.Secret)
+			form.Set("scope", "https://graph.microsoft.com/.default offline_access")
+		}
 	} else {
 		form.Set("grant_type", "client_credentials")
 		form.Set("client_secret", acc.Secret)
-		if tenant == "common" {
-			tenant = "organizations"
-		}
 	}
 
 	resp, err := c.http.PostForm(fmt.Sprintf(tokenURL, tenant), form)
@@ -57,9 +71,6 @@ func (c *Client) EnsureToken(acc *model.Account) error {
 	}
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode >= 300 {
-		return fmt.Errorf("token http %d: %s", resp.StatusCode, truncate(string(body), 400))
-	}
 	var tok struct {
 		AccessToken  string `json:"access_token"`
 		RefreshToken string `json:"refresh_token"`
@@ -67,10 +78,15 @@ func (c *Client) EnsureToken(acc *model.Account) error {
 		Error        string `json:"error"`
 		Desc         string `json:"error_description"`
 	}
-	if err := json.Unmarshal(body, &tok); err != nil {
-		return err
-	}
-	if tok.AccessToken == "" {
+	_ = json.Unmarshal(body, &tok)
+	if resp.StatusCode >= 300 || tok.AccessToken == "" {
+		if acc.Mode == model.ModeLogin && acc.RefreshToken != "" && form.Get("grant_type") == "refresh_token" {
+			acc.RefreshToken = ""
+			return c.EnsureToken(acc)
+		}
+		if resp.StatusCode >= 300 {
+			return fmt.Errorf("token http %d: %s", resp.StatusCode, truncate(string(body), 400))
+		}
 		return fmt.Errorf("token error %s: %s", tok.Error, tok.Desc)
 	}
 	acc.AccessToken = tok.AccessToken
@@ -87,6 +103,7 @@ func (c *Client) EnsureToken(acc *model.Account) error {
 type CallResult struct {
 	Status   int
 	OK       bool
+	Skipped  bool
 	Message  string
 	Duration time.Duration
 	Path     string
@@ -144,14 +161,37 @@ func (c *Client) Call(acc *model.Account, api model.APIDef) CallResult {
 	if !ok {
 		msg = truncate(string(raw), 300)
 	}
+	skipped := !ok && isPermissionSkip(resp.StatusCode, string(raw))
 	return CallResult{
 		Status:   resp.StatusCode,
 		OK:       ok,
+		Skipped:  skipped,
 		Message:  msg,
 		Duration: time.Since(start),
 		Path:     path,
 		Method:   method,
 	}
+}
+
+func isPermissionSkip(status int, body string) bool {
+	if status != 401 && status != 403 {
+		return false
+	}
+	s := strings.ToLower(body)
+	keys := []string{
+		"authentication_msgraphpermissionmissing",
+		"authorization_requestdenied",
+		"erroraccessdenied",
+		"insufficient privileges",
+		"does not have required microsoft graph permission",
+		"missing required permissions",
+	}
+	for _, k := range keys {
+		if strings.Contains(s, k) {
+			return true
+		}
+	}
+	return false
 }
 
 func truncate(s string, n int) string {

@@ -192,6 +192,7 @@ func (s *Scheduler) runAccount(id string) {
 	picked := pickN(apis, n)
 	success := 0
 	fail := 0
+	skipped := 0
 	var lastErr string
 	for _, api := range picked {
 		res := s.graph.Call(acc, api)
@@ -204,6 +205,7 @@ func (s *Scheduler) runAccount(id string) {
 			Path:      res.Path,
 			Status:    res.Status,
 			OK:        res.OK,
+			Skipped:   res.Skipped,
 			Message:   res.Message,
 			Duration:  res.Duration.Milliseconds(),
 			CreatedAt: time.Now(),
@@ -211,6 +213,8 @@ func (s *Scheduler) runAccount(id string) {
 		s.store.AppendLog(log)
 		if res.OK {
 			success++
+		} else if res.Skipped {
+			skipped++
 		} else {
 			fail++
 			lastErr = res.Message
@@ -236,6 +240,9 @@ func (s *Scheduler) runAccount(id string) {
 			a.ConsecutiveFail = 0
 			if success > 0 {
 				a.LastError = ""
+				a.Status = model.StatusRunning
+			} else if skipped > 0 {
+				a.LastError = "部分 API 因权限不足已跳过"
 				a.Status = model.StatusRunning
 			}
 		}
@@ -290,7 +297,13 @@ func (s *Scheduler) notify(acc *model.Account, settings model.Settings, subject,
 func selectedAPIs(acc *model.Account) []model.APIDef {
 	mode := string(acc.Mode)
 	if len(acc.APIList) == 0 {
-		return graph.FilterByMode(mode)
+		out := make([]model.APIDef, 0)
+		for _, id := range graph.DefaultIDs(mode) {
+			if api, ok := graph.ByID(id); ok {
+				out = append(out, api)
+			}
+		}
+		return out
 	}
 	out := make([]model.APIDef, 0, len(acc.APIList))
 	for _, id := range acc.APIList {

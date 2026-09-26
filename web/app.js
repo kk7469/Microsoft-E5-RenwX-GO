@@ -202,7 +202,7 @@ function accountsPage() {
       h("div", { class: "row" }, [
         h("button", { class: "btn ghost", onClick: () => {
           const form = emptyForm();
-          form.apiList = catalogFor("login").map((x) => x.id);
+          form.apiList = recommendedIDs("login");
           state.form = form;
           state.editing = null;
           state.page = "edit";
@@ -283,7 +283,7 @@ function editPage() {
         field("MS365 账号 (UPN)", input("upn", f.upn, "user@tenant.onmicrosoft.com")),
         field("应用程序（客户端）ID", input("clientId", f.clientId)),
         field("账号密码 / 客户端机密", input("secret", f.secret, state.editing ? "留空则不修改" : "", "password")),
-        field("租户 ID（可空，默认 common）", input("tenant", f.tenant, "common 或目录 ID")),
+        field("租户 ID / 域名（可空，自动用账号域名）", input("tenant", f.tenant, "目录 ID 或 xxx.onmicrosoft.com")),
         field("通知邮箱", input("notifyEmail", f.notifyEmail)),
       ]),
       h("div", { class: "field" }, [
@@ -291,7 +291,7 @@ function editPage() {
         h("select", {
           onChange: (e) => {
             state.form.mode = e.target.value;
-            state.form.apiList = catalogFor(e.target.value).map((x) => x.id);
+            state.form.apiList = recommendedIDs(e.target.value);
             render();
           },
         }, [
@@ -301,6 +301,10 @@ function editPage() {
       ]),
       h("div", { class: "field" }, [
         h("label", {}, "Graph API 列表（随机抽取调用）"),
+        h("div", { class: "row", style: "margin-bottom:8px" }, [
+          h("button", { class: "btn ghost", type: "button", onClick: () => { state.form.apiList = recommendedIDs(f.mode); render(); } }, "勾选推荐"),
+          h("button", { class: "btn ghost", type: "button", onClick: () => { state.form.apiList = catalog.map((x) => x.id); render(); } }, "全选"),
+        ]),
         h("div", { class: "api-list" }, catalog.map((apiItem) => h("label", { class: "api-item" }, [
           h("input", {
             type: "checkbox",
@@ -312,7 +316,7 @@ function editPage() {
               state.form.apiList = [...set];
             },
           }),
-          `${apiItem.name}  ·  ${apiItem.method} ${apiItem.path}  ·  ${apiItem.permission}`,
+          `${apiItem.name}  ·  ${apiItem.method} ${apiItem.path}  ·  ${apiItem.permission}${apiItem.recommended ? "  ·  推荐" : ""}`,
         ]))),
       ]),
       h("div", { class: "row" }, [
@@ -325,6 +329,11 @@ function editPage() {
 
 function catalogFor(mode) {
   return state.catalog.filter((x) => x.modes.includes(mode));
+}
+function recommendedIDs(mode) {
+  const list = catalogFor(mode);
+  const rec = list.filter((x) => x.recommended).map((x) => x.id);
+  return rec.length ? rec : list.map((x) => x.id);
 }
 function field(label, el) {
   return h("div", { class: "field" }, [h("label", {}, label), el]);
@@ -345,7 +354,7 @@ function option(value, text, selected) {
 
 async function saveAccount() {
   const body = { ...state.form };
-  if (!body.apiList.length) body.apiList = catalogFor(body.mode).map((x) => x.id);
+  if (!body.apiList.length) body.apiList = recommendedIDs(body.mode);
   try {
     if (state.editing) {
       await api(`/api/accounts/${state.editing}`, { method: "PUT", body: JSON.stringify(body) });
@@ -371,7 +380,7 @@ function logsPage() {
           h("td", {}, formatTime(l.createdAt)),
           h("td", {}, l.accountId),
           h("td", {}, `${l.apiName || l.apiId}`),
-          h("td", {}, h("span", { class: `badge ${l.ok ? "ok" : "err"}` }, l.ok ? `成功 ${l.status}` : `失败 ${l.status || ""}`)),
+          h("td", {}, h("span", { class: `badge ${l.ok ? "ok" : (l.skipped ? "warn" : "err")}` }, l.ok ? `成功 ${l.status}` : (l.skipped ? `跳过 ${l.status || ""}` : `失败 ${l.status || ""}`))),
           h("td", {}, `${l.durationMs || 0} ms`),
           h("td", {}, (l.message || "").slice(0, 160)),
         ]))),
