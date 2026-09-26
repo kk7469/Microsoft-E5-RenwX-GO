@@ -1,0 +1,26 @@
+{
+  "settings": {
+    "adminPassword": "123456",
+    "notifyEmail": "",
+    "smtpHost": "smtp.163.com",
+    "smtpPort": 465,
+    "smtpUser": "",
+    "smtpPassword": "",
+    "smtpFrom": "",
+    "minIntervalSec": 1000,
+    "maxIntervalSec": 2000,
+    "maxApisPerRound": 3,
+    "failPauseThreshold": 5,
+    "autoResumeHours": 24,
+    "pardonIntervalDays": 30,
+    "dailyReportHour": 18,
+    "icpText": "",
+    "icpLink": "https://beian.miit.gov.cn",
+    "notice": "通过定时随机调用 Microsoft Graph API，保持 E5 开发者订阅活跃。",
+    "siteName": "Microsoft 365 E5 Renew X"
+  },
+  "accounts": [],
+  "logs": [],
+  "lastPardon": "2026-09-26T03:03:54.331162811Z",
+  "lastReport": "0001-01-01T00:00:00Z"
+}
