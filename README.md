@@ -36,7 +36,8 @@ PORT=1066 ADMIN_PASSWORD=123456 DATA_PATH=data/store.json go run .
 
 ## Docker
 ```bash
-# 拉库git clone https://github.com/kk7469/microsoft-e5-renwx-go.git
+# 拉库
+git clone https://github.com/kk7469/microsoft-e5-renwx-go.git
 cd microsoft-e5-renwx-go
 # 构建镜像，后面的.不能删除
 docker build -t e5renewx-go:latest .
