@@ -1,4 +1,4 @@
-# Microsoft 365 E5 Renew X (Go)
+# Microsoft 365 E5 RenewX GO
 
 用 Go 重写的 Microsoft 365 E5 Graph API 保活续订服务，对齐原项目核心能力。
 

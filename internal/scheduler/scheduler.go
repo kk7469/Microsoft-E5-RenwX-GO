@@ -136,7 +136,7 @@ func (s *Scheduler) maybeDailyReport(now time.Time, settings model.Settings) {
 		return
 	}
 	var b strings.Builder
-	b.WriteString("E5 Renew X 每日运行报告\n\n")
+	b.WriteString("E5 RenewX GO 每日运行报告\n\n")
 	accs := s.store.Accounts()
 	okCount := 0
 	for _, a := range accs {
@@ -150,7 +150,7 @@ func (s *Scheduler) maybeDailyReport(now time.Time, settings model.Settings) {
 		}
 	}
 	b.WriteString(fmt.Sprintf("\n运行中 %d / 共 %d\n", okCount, len(accs)))
-	_ = mailer.Send(settings, to, "E5 Renew X 每日运行报告", b.String())
+	_ = mailer.Send(settings, to, "E5 RenewX GO 每日运行报告", b.String())
 	_ = s.store.SetLastReport(now)
 }
 
@@ -291,7 +291,7 @@ func (s *Scheduler) notify(acc *model.Account, settings model.Settings, subject,
 	if to == "" {
 		return
 	}
-	_ = mailer.Send(settings, to, "E5 Renew X: "+subject, body)
+	_ = mailer.Send(settings, to, "E5 RenewX GO: "+subject, body)
 }
 
 func selectedAPIs(acc *model.Account) []model.APIDef {

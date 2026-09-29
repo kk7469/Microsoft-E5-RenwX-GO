@@ -123,7 +123,7 @@ func (c *Client) Call(acc *model.Account, api model.APIDef) CallResult {
 	case "sendmail":
 		payload := map[string]any{
 			"message": map[string]any{
-				"subject": fmt.Sprintf("E5 Renew X keepalive %s", time.Now().Format(time.RFC3339)),
+				"subject": fmt.Sprintf("E5 RenewX GO keepalive %s", time.Now().Format(time.RFC3339)),
 				"body": map[string]string{
 					"contentType": "Text",
 					"content":     randomText(),

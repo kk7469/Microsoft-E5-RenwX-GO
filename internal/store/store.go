@@ -49,10 +49,10 @@ func defaultSettings(adminPassword string) model.Settings {
 		MaxAPIsPerRound:    3,
 		FailPauseThreshold: 5,
 		AutoResumeHours:    24,
-		PardonIntervalDays: 30,
+		PardonIntervalDays: 7,
 		DailyReportHour:    18,
 		ICPLink:            "https://beian.miit.gov.cn",
-		SiteName:           "Microsoft 365 E5 Renew X",
+		SiteName:           "Microsoft 365 E5 RenewX GO",
 		Notice:             "通过定时随机调用 Microsoft Graph API，保持 E5 开发者订阅活跃。",
 	}
 }
@@ -79,6 +79,22 @@ func (s *Store) load() error {
 	s.logs = snap.Logs
 	s.pardon = snap.LastPardon
 	s.report = snap.LastReport
+	// 一次性迁移：把历史快照中尚未随代码默认值更新的"默认字段"重置为当前代码内置默认值，
+	// 保证新增的默认站点名、默认特赦间隔等设置对已有数据文件也生效。
+	migrated := false
+	if s.settings.SiteName != "Microsoft 365 E5 RenewX GO" {
+		s.settings.SiteName = defaultSettings(s.settings.AdminPassword).SiteName
+		migrated = true
+	}
+	if s.settings.PardonIntervalDays != 7 {
+		s.settings.PardonIntervalDays = 7
+		migrated = true
+	}
+	if migrated {
+		if err := s.saveLocked(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

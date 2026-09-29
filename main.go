@@ -36,7 +36,7 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("E5 Renew X listening on :%s", cfg.Port)
+		log.Printf("E5 RenewX GO listening on :%s", cfg.Port)
 		if err := httpSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("http: %v", err)
 		}

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"runtime"
@@ -190,7 +191,106 @@ func (s *Server) handleOverview(w http.ResponseWriter, r *http.Request) {
 		"hostname":     hostname(),
 		"version":      appVersion,
 		"uptime":       uptimeSeconds(),
+		"hostInfo":     hostInfo(),
 	})
+}
+
+// 宿主机系统信息（从 /proc、/etc 等读取）
+func hostInfo() map[string]any {
+	info := map[string]any{
+		"hostname":     hostname(),
+		"distro":       distroRelease(),
+		"kernel":       kernelVersion(),
+		"arch":         runtime.GOARCH,
+		"osType":       runtime.GOOS,
+		"ip":           hostIP(),
+		"bootTime":     bootTime(),
+		"bootTimeText": "",
+	}
+	if bt := info["bootTime"].(string); bt != "" {
+		info["bootTimeText"] = bt
+	}
+	up := uptimeSeconds()
+	if up > 0 {
+		now := time.Now()
+		bt := now.Add(-time.Duration(up) * time.Second)
+		info["bootTime"] = bt.In(beijingTZ).Format("2006-01-02 15:04:05")
+		info["bootTimeText"] = info["bootTime"].(string)
+	}
+	info["uptimeText"] = formatUptimeText(up)
+	return info
+}
+
+// beijingTZ 北京时间（UTC+8，无夏令时，固定偏移即可）
+var beijingTZ = time.FixedZone("CST", 8*3600)
+
+func formatUptimeText(seconds float64) string {
+	if seconds <= 0 {
+		return "-"
+	}
+	d := int(seconds / 86400)
+	hh := int((seconds - float64(d)*86400) / 3600)
+	mm := int((seconds - float64(d)*86400 - float64(hh)*3600) / 60)
+	if d > 0 {
+		return fmt.Sprintf("%d 天 %d 小时 %d 分钟", d, hh, mm)
+	}
+	if hh > 0 {
+		return fmt.Sprintf("%d 小时 %d 分钟", hh, mm)
+	}
+	return fmt.Sprintf("%d 分钟", mm)
+}
+
+// 发行版本：优先 /etc/os-release
+func distroRelease() string {
+	if data, err := os.ReadFile("/etc/os-release"); err == nil {
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			if strings.HasPrefix(line, "PRETTY_NAME=") {
+				name := strings.TrimPrefix(line, "PRETTY_NAME=")
+				return strings.Trim(name, `"`)
+			}
+		}
+	}
+	return runtime.GOOS
+}
+
+// 启动时间：btime 取自 /proc/stat
+func bootTime() string {
+	data, err := os.ReadFile("/proc/stat")
+	if err != nil {
+		return ""
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		if strings.HasPrefix(line, "btime ") {
+			var sec int64
+			fmt.Sscanf(strings.TrimPrefix(line, "btime "), "%d", &sec)
+			return time.Unix(sec, 0).In(beijingTZ).Format("2006-01-02 15:04:05")
+		}
+	}
+	return ""
+}
+
+// 主机地址：读取首个非回环 IPv4
+func hostIP() string {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return ""
+	}
+	for _, iface := range ifaces {
+		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		addrs, _ := iface.Addrs()
+		for _, a := range addrs {
+			if ipnet, ok := a.(*net.IPNet); ok {
+				ip4 := ipnet.IP.To4()
+				if ip4 != nil && ip4[0] != 127 {
+					return ip4.String()
+				}
+			}
+		}
+	}
+	return ""
 }
 
 func (s *Server) handleCatalog(w http.ResponseWriter, r *http.Request) {

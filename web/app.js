@@ -98,25 +98,28 @@ function statusBadge(st) {
 }
 
 function loginView() {
-  const pwd = h("input", { type: "password", placeholder: "管理员密码", id: "pwd" });
+  const doLogin = async () => {
+    try {
+      await api("/api/login", { method: "POST", body: JSON.stringify({ password: pwd.value }) });
+      state.user = { name: "admin" };
+      await refreshAll();
+      render();
+    } catch (e) {
+      toast(e.message);
+    }
+  };
+  const pwd = h("input", {
+    type: "password",
+    placeholder: "管理员密码",
+    id: "pwd",
+    onKeydown: (e) => { if (e.key === "Enter") doLogin(); },
+  });
   return h("div", { class: "login-wrap" }, [
     h("div", { class: "panel login-card" }, [
-      h("h1", {}, "E5 Renew X"),
+      h("h1", {}, "E5 RenewX GO"),
       h("p", { class: "muted" }, "Go 重写版 · Microsoft Graph 保活续订服务"),
       h("div", { class: "field" }, [h("label", {}, "管理员密码"), pwd]),
-      h("button", {
-        class: "btn",
-        onClick: async () => {
-          try {
-            await api("/api/login", { method: "POST", body: JSON.stringify({ password: pwd.value }) });
-            state.user = { name: "admin" };
-            await refreshAll();
-            render();
-          } catch (e) {
-            toast(e.message);
-          }
-        },
-      }, "登录"),
+      h("button", { class: "btn", onClick: doLogin }, "登录"),
       h("p", { class: "muted" }, "默认密码 123456，可在设置页或环境变量 ADMIN_PASSWORD 修改。"),
     ]),
   ]);
@@ -132,13 +135,12 @@ function navBtn(id, label) {
 function layout(content) {
   return h("div", { class: "layout" }, [
     h("aside", { class: "sidebar" }, [
-      h("div", { class: "brand" }, ["E5 Renew X", h("small", {}, "Microsoft 365 Graph Keepalive")]),
+      h("div", { class: "brand" }, ["E5 RenewX GO", h("small", {}, "Microsoft 365 Graph Keepalive")]),
       navBtn("home", "主页"),
       navBtn("accounts", "运行账号"),
       navBtn("logs", "调用日志"),
       navBtn("settings", "系统设置"),
       navBtn("about", "关于"),
-      h("div", { class: "grow" }),
       h("button", {
         class: "nav-btn",
         onClick: async () => {
@@ -147,6 +149,7 @@ function layout(content) {
           render();
         },
       }, "退出登录"),
+      h("div", { class: "grow" }),
     ]),
     h("main", { class: "main" }, [
       content,
@@ -159,6 +162,16 @@ function layout(content) {
 
 function homePage() {
   const o = state.overview || {};
+  const hi = o.hostInfo || {};
+  const links = [
+    { text: "查看 E5 剩余天数", hint: "不带 onmicrosoft 的账号登录", url: "https://developer.microsoft.com/en-us/microsoft-365/profile" },
+    { text: "Office 365 主页", hint: "onmicrosoft 账号登录", url: "https://www.office.com/?auth=2" },
+    { text: "E5 管理员中心", hint: "onmicrosoft 账号登录", url: "https://admin.cloud.microsoft/#/homepage" },
+    { text: "OneDrive 设置", url: "https://admin.onedrive.com/?v=StorageSettings" },
+    { text: "Azure 主页", url: "https://portal.azure.com/#home" },
+    { text: "Azure 应用注册", url: "https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade" },
+    { text: "关闭 Azure AD 双重验证", url: "https://aad.portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/Overview" },
+  ];
   return h("div", {}, [
     h("div", { class: "topbar" }, [h("h1", {}, "系统概览")]),
     h("div", { class: "cards" }, [
@@ -167,43 +180,35 @@ function homePage() {
       metric("成功调用", o.success || 0),
       metric("失败调用", o.fail || 0),
     ]),
-    h("div", { class: "grid2" }, [
-      h("div", { class: "panel" }, [
-        h("h3", {}, "服务器配置"),
-        p("操作系统", `${o.os || "-"} ${o.kernel || ""}`),
-        p("主机名", o.hostname || "-"),
-        p("应用版本", o.version || "-"),
-        p("Go 版本", o.goVersion || "-"),
-      ]),
-      h("div", { class: "panel" }, [
-        h("h3", {}, "资源占用"),
-        p("CPU", `${o.cpuCount || 0} 核`),
-        p("内存总容量", `${(o.memTotalGB || 0).toFixed(1)} GB`),
-        p("磁盘总容量", `${(o.diskTotalGB || 0).toFixed(1)} GB`),
-        p("运行时间", formatUptime(o.uptime || 0)),
+    h("div", { class: "panel" }, [
+      h("h3", {}, "系统信息"),
+      h("div", { class: "grid2", style: "margin-bottom:0" }, [
+        p("主机名称", hi.hostname || "-"),
+        p("发行版本", hi.distro || "-"),
+        p("内核版本", hi.kernel || "-"),
+        p("系统类型", hi.osType || "-"),
+        p("主机地址", hi.ip || "-"),
+        p("启动时间", hi.bootTime || "-"),
+        p("运行时间", hi.uptimeText || "-"),
       ]),
     ]),
-    h("div", { class: "grid2" }, [
-      h("div", { class: "panel" }, [
-        h("h3", {}, "内存"),
-        p("已使用", `${(o.memUsedGB || 0).toFixed(1)} GB / ${(o.memTotalGB || 0).toFixed(1)} GB`),
-      ]),
-      h("div", { class: "panel" }, [
-        h("h3", {}, "磁盘"),
-        p("可用空间", `${(o.diskFreeGB || 0).toFixed(1)} GB / ${(o.diskTotalGB || 0).toFixed(1)} GB`),
-      ]),
+    h("div", { class: "panel links-panel" }, [
+      h("h3", {}, "快捷链接"),
+      h("div", { class: "links-grid" }, links.map((l) =>
+        h("a", {
+          class: "link-item",
+          href: l.url,
+          target: "_blank",
+          rel: "noopener",
+          title: l.hint || l.url,
+        }, [
+          h("span", { class: "dot" }),
+          h("span", {}, l.text),
+          l.hint ? h("span", { class: "hint" }, l.hint) : null,
+        ])
+      )),
     ]),
   ]);
-}
-
-function formatUptime(seconds) {
-  if (!seconds) return "-";
-  const days = Math.floor(seconds / 86400);
-  const hours = Math.floor((seconds % 86400) / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  if (days > 0) return `${days}天${hours}小时`;
-  if (hours > 0) return `${hours}小时${mins}分钟`;
-  return `${mins}分钟`;
 }
 
 function metric(label, value) {
@@ -213,7 +218,7 @@ function metric(label, value) {
   ]);
 }
 function p(k, v) {
-  return h("p", {}, [`${k}：`, h("b", {}, String(v ?? "-"))]);
+  return h("p", {}, [`${k}：`, h("span", {}, String(v ?? "-"))]);
 }
 
 function accountsPage() {
@@ -489,16 +494,19 @@ function aboutPage() {
   return h("div", {}, [
     h("div", { class: "topbar" }, [h("h1", {}, "关于")]),
     h("div", { class: "panel notice" }, [
-      h("p", {}, "这是 Microsoft 365 E5 Renew X 的 Go 重写版，用于通过随机调用 Microsoft Graph API 保持 E5 开发者订阅活跃。"),
+      h("p", {}, "这是 Microsoft 365 E5 RenewX GO 的 Go 重写版，用于通过随机调用 Microsoft Graph API 保持 E5 开发者订阅活跃。"),
       h("p", {}, "对齐原项目能力：登录/非登录两种调用、多账号托管、随机 API、1000-2000 秒间隔、邮件通知、错误暂停、定时特赦恢复、ICP 与公告。"),
       h("p", {}, "委托权限（登录调用）建议：User.Read, Mail.Read, Mail.Send, Files.ReadWrite, Calendars.Read, Contacts.Read, Sites.Read.All, Group.Read.All 等。"),
       h("p", {}, "应用程序权限（非登录调用）建议：User.Read.All, Mail.Read, Files.Read.All, Directory.Read.All, Sites.Read.All 等，并授予管理员同意。"),
-      h("p", {}, "原项目参考：hongyonghan/Docker_Microsoft365_E5_Renew_X、SundayRX Microsoft 365 E5 Renew X。"),
+      h("p", {}, "原项目参考：hongyonghan/Docker_Microsoft365_E5_Renew_X、SundayRX Microsoft 365 E5 RenewX GO。"),
     ]),
   ]);
 }
 
 function render() {
+  if (state.settings?.siteName) {
+    document.title = state.settings.siteName;
+  }
   app.innerHTML = "";
   if (!state.user) {
     app.append(loginView());
