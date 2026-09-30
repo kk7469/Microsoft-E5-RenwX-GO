@@ -14,6 +14,8 @@ https://blog.csdn.net/qq_33212020/article/details/119747634
 
 https://blog.csdn.net/CingSyuan/article/details/155430662
 
+具体权限请直接从“权限.txt”中复制，分为登录和非登录两种，选其一就行，如果都选了<b>“可能”</b>会超出数量上限。
+
 ## 功能
 
 - 管理员密码登录（默认 `123456`，路由等价 `/Admin/Login`）
