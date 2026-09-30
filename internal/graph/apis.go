@@ -23,8 +23,6 @@ func Catalog() []model.APIDef {
 		{ID: "notes", Name: "读取 OneNote", Method: "GET", Path: "/me/onenote/notebooks", Permission: "Notes.Read", Modes: []string{"login"}, Description: "读取笔记本"},
 		{ID: "todo", Name: "读取待办列表", Method: "GET", Path: "/me/todo/lists", Permission: "Tasks.Read", Modes: []string{"login"}, Description: "读取 To Do 列表"},
 		{ID: "planner", Name: "读取 Planner", Method: "GET", Path: "/me/planner/tasks", Permission: "Tasks.Read", Modes: []string{"login"}, Description: "读取 Planner 任务"},
-		{ID: "teams", Name: "加入的团队", Method: "GET", Path: "/me/joinedTeams", Permission: "Team.ReadBasic.All", Modes: []string{"login"}, Description: "读取已加入的 Teams"},
-		{ID: "chats", Name: "读取聊天", Method: "GET", Path: "/me/chats?$top=5", Permission: "Chat.Read", Modes: []string{"login"}, Description: "读取 Teams 聊天"},
 		{ID: "people", Name: "相关人员", Method: "GET", Path: "/me/people?$top=5", Permission: "People.Read", Modes: []string{"login"}, Description: "读取相关联系人"},
 		{ID: "outlook-master", Name: "Outlook 分类", Method: "GET", Path: "/me/outlook/masterCategories", Permission: "MailboxSettings.Read", Modes: []string{"login"}, Description: "读取邮箱分类"},
 		{ID: "subscribed-skus", Name: "订阅 SKU", Method: "GET", Path: "/subscribedSkus", Permission: "Organization.Read.All", Modes: []string{"login", "app"}, Description: "读取已订阅许可证"},
@@ -34,17 +32,11 @@ func Catalog() []model.APIDef {
 		{ID: "directory-roles", Name: "目录角色", Method: "GET", Path: "/directoryRoles", Permission: "RoleManagement.Read.Directory", Modes: []string{"login", "app"}, Description: "读取目录角色"},
 		{ID: "devices", Name: "列出设备", Method: "GET", Path: "/devices?$top=5", Permission: "Device.Read.All", Modes: []string{"login", "app"}, Description: "读取设备"},
 		{ID: "audit-signins", Name: "登录日志", Method: "GET", Path: "/auditLogs/signIns?$top=5", Permission: "AuditLog.Read.All", Modes: []string{"login", "app"}, Description: "读取登录审计"},
-		{ID: "reports-email", Name: "邮件活跃报告", Method: "GET", Path: "/reports/getEmailActivityUserCounts(period='D7')", Permission: "Reports.Read.All", Modes: []string{"login", "app"}, Description: "读取邮件活跃报告"},
-		{ID: "reports-onedrive", Name: "OneDrive 使用报告", Method: "GET", Path: "/reports/getOneDriveUsageAccountCounts(period='D7')", Permission: "Reports.Read.All", Modes: []string{"login", "app"}, Description: "读取网盘使用报告"},
-		{ID: "security-alerts", Name: "安全告警", Method: "GET", Path: "/security/alerts_v2?$top=5", Permission: "SecurityEvents.Read.All", Modes: []string{"login", "app"}, Description: "读取安全告警"},
 		{ID: "sharepoint-lists", Name: "站点列表", Method: "GET", Path: "/sites/root/lists", Permission: "Sites.Read.All", Modes: []string{"login", "app"}, Recommended: true, Description: "读取根站点列表"},
 		{ID: "drive-recent", Name: "最近文件", Method: "GET", Path: "/me/drive/recent", Permission: "Files.Read", Modes: []string{"login"}, Recommended: true, Description: "读取最近使用的文件"},
 		{ID: "drive-shared", Name: "与我共享", Method: "GET", Path: "/me/drive/sharedWithMe", Permission: "Files.Read", Modes: []string{"login"}, Recommended: true, Description: "读取共享文件"},
 		{ID: "mailbox-settings", Name: "邮箱设置", Method: "GET", Path: "/me/mailboxSettings", Permission: "MailboxSettings.Read", Modes: []string{"login"}, Description: "读取邮箱设置"},
-		{ID: "user-photo", Name: "用户头像", Method: "GET", Path: "/me/photo", Permission: "User.Read", Modes: []string{"login"}, Recommended: true, Description: "读取用户头像元数据"},
 		{ID: "member-of", Name: "所属组", Method: "GET", Path: "/me/memberOf", Permission: "Directory.Read.All", Modes: []string{"login"}, Description: "读取当前用户所属组"},
-		{ID: "insights", Name: "Office 洞察", Method: "GET", Path: "/me/insights/used", Permission: "Sites.Read.All", Modes: []string{"login"}, Description: "读取最近使用文档洞察"},
-		{ID: "presence", Name: "在线状态", Method: "GET", Path: "/me/presence", Permission: "Presence.Read", Modes: []string{"login"}, Description: "读取 Teams 在线状态"},
 	}
 }
 

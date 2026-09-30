@@ -400,7 +400,7 @@ function logsPage() {
   return h("div", {}, [
     h("div", { class: "topbar" }, [h("h1", {}, "调用日志")]),
     h("div", { class: "panel" }, [
-      h("table", {}, [
+      h("table", { class: "log-table" }, [
         h("thead", {}, h("tr", {}, ["时间", "账号", "API", "结果", "耗时", "说明"].map((t) => h("th", {}, t)))),
         h("tbody", {}, state.logs.map((l) => h("tr", {}, [
           h("td", {}, formatTime(l.createdAt)),
@@ -501,7 +501,6 @@ function aboutPage() {
     ["Application.Read.All", true, true],
     ["AuditLog.Read.All", true, true],
     ["Calendars.Read", true, true],
-    ["Chat.Read", true, false],
     ["Contacts.Read", true, false],
     ["Device.Read.All", true, true],
     ["Directory.Read.All", true, true],
@@ -515,13 +514,9 @@ function aboutPage() {
     ["Notes.Read", true, false],
     ["Organization.Read.All", true, true],
     ["People.Read", true, false],
-    ["Presence.Read", true, false],
-    ["Reports.Read.All", true, true],
     ["RoleManagement.Read.Directory", true, true],
-    ["SecurityEvents.Read.All", true, true],
     ["Sites.Read.All", true, true],
     ["Tasks.Read", true, false],
-    ["Team.ReadBasic.All", true, false],
     ["User.Read", true, false],
     ["User.Read.All", true, true],
     ["Files.Read.All", false, true],
