@@ -143,6 +143,12 @@ label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px
   backdrop-filter: blur(10px);
 }
 .footer { margin-top: 20px; color: var(--muted); font-size: 12px; text-align: center; }
+.perm-table { margin-top: 8px; }
+.perm-table th, .perm-table td { font-size: 13px; padding: 7px 8px; line-height: 1.35; }
+.perm-idx { width: 36px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.perm-name { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; }
+.perm-yes { color: #248a3d; font-weight: 600; }
+.perm-no { color: var(--muted); }
 
 /* 快捷链接区 */
 .links-panel { margin-top: 8px; }

@@ -17,7 +17,7 @@ func Catalog() []model.APIDef {
 		{ID: "drive", Name: "读取 OneDrive", Method: "GET", Path: "/me/drive", Permission: "Files.Read", Modes: []string{"login"}, Recommended: true, Description: "读取网盘根信息"},
 		{ID: "drive-root", Name: "列出 OneDrive 根目录", Method: "GET", Path: "/me/drive/root/children?$top=10", Permission: "Files.Read", Modes: []string{"login"}, Recommended: true, Description: "列出网盘文件"},
 		{ID: "drive-user", Name: "读取用户 OneDrive", Method: "GET", Path: "/users/{upn}/drive", Permission: "Files.Read.All", Modes: []string{"app"}, Recommended: true, Description: "读取用户网盘"},
-		{ID: "drive-upload", Name: "上传随机文件", Method: "PUT", Path: "/me/drive/root:/E5RenewX/{name}.txt:/content", Permission: "Files.ReadWrite", Modes: []string{"login"}, RandomBody: true, Recommended: true, Description: "向 E5RenewX 目录上传随机文本"},
+		{ID: "drive-upload", Name: "上传随机文件", Method: "PUT", Path: "/me/drive/root:/ReGo/{name}.txt:/content", Permission: "Files.ReadWrite", Modes: []string{"login"}, RandomBody: true, Recommended: true, Description: "向 ReGo 目录上传随机文本"},
 		{ID: "sites", Name: "搜索站点", Method: "GET", Path: "/sites?search=*", Permission: "Sites.Read.All", Modes: []string{"login", "app"}, Recommended: true, Description: "搜索 SharePoint 站点"},
 		{ID: "groups", Name: "列出组", Method: "GET", Path: "/groups?$top=5", Permission: "Group.Read.All", Modes: []string{"login", "app"}, Description: "读取安全组/Office 组"},
 		{ID: "notes", Name: "读取 OneNote", Method: "GET", Path: "/me/onenote/notebooks", Permission: "Notes.Read", Modes: []string{"login"}, Description: "读取笔记本"},

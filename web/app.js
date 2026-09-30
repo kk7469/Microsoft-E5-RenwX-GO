@@ -491,14 +491,62 @@ function settingsPage() {
 }
 
 function aboutPage() {
+  const permRow = (idx, name, login, app) => h("tr", {}, [
+    h("td", { class: "perm-idx" }, String(idx)),
+    h("td", { class: "perm-name" }, name),
+    h("td", { class: login ? "perm-yes" : "perm-no" }, login ? "✔" : "—"),
+    h("td", { class: app ? "perm-yes" : "perm-no" }, app ? "✔" : "—"),
+  ]);
+  const perms = [
+    ["Application.Read.All", true, true],
+    ["AuditLog.Read.All", true, true],
+    ["Calendars.Read", true, true],
+    ["Chat.Read", true, false],
+    ["Contacts.Read", true, false],
+    ["Device.Read.All", true, true],
+    ["Directory.Read.All", true, true],
+    ["Domain.Read.All", true, true],
+    ["Files.Read", true, false],
+    ["Files.ReadWrite", true, false],
+    ["Group.Read.All", true, true],
+    ["Mail.Read", true, true],
+    ["Mail.Send", true, false],
+    ["MailboxSettings.Read", true, false],
+    ["Notes.Read", true, false],
+    ["Organization.Read.All", true, true],
+    ["People.Read", true, false],
+    ["Presence.Read", true, false],
+    ["Reports.Read.All", true, true],
+    ["RoleManagement.Read.Directory", true, true],
+    ["SecurityEvents.Read.All", true, true],
+    ["Sites.Read.All", true, true],
+    ["Tasks.Read", true, false],
+    ["Team.ReadBasic.All", true, false],
+    ["User.Read", true, false],
+    ["User.Read.All", true, true],
+    ["Files.Read.All", false, true],
+  ];
   return h("div", {}, [
     h("div", { class: "topbar" }, [h("h1", {}, "关于")]),
-    h("div", { class: "panel notice" }, [
+    h("div", { class: "panel" }, [
       h("p", {}, "这是 Microsoft 365 E5 RenewX GO 的 Go 重写版，用于通过随机调用 Microsoft Graph API 保持 E5 开发者订阅活跃。"),
-      h("p", {}, "对齐原项目能力：登录/非登录两种调用、多账号托管、随机 API、1000-2000 秒间隔、邮件通知、错误暂停、定时特赦恢复、ICP 与公告。"),
-      h("p", {}, "委托权限（登录调用）建议：User.Read, Mail.Read, Mail.Send, Files.ReadWrite, Calendars.Read, Contacts.Read, Sites.Read.All, Group.Read.All 等。"),
-      h("p", {}, "应用程序权限（非登录调用）建议：User.Read.All, Mail.Read, Files.Read.All, Directory.Read.All, Sites.Read.All 等，并授予管理员同意。"),
-      h("p", {}, "原项目参考：hongyonghan/Docker_Microsoft365_E5_Renew_X、SundayRX Microsoft 365 E5 RenewX GO。"),
+      h("p", {}, ["原项目地址：", h("br"), h("a", { href: "https://github.com/hongyonghan/Docker_Microsoft365_E5_Renew_X", target: "_blank", rel: "noopener" }, "https://github.com/hongyonghan/Docker_Microsoft365_E5_Renew_X")]),
+      h("p", {}, ["本项目地址：", h("br"), h("a", { href: "https://github.com/kk7469/microsoft-e5-renwx-go", target: "_blank", rel: "noopener" }, "https://github.com/kk7469/microsoft-e5-renwx-go")]),
+      h("p", {}, ["账号注册相关请参考原作者博客：", h("br"), h("a", { href: "https://blog.csdn.net/qq_33212020/article/details/119747634", target: "_blank", rel: "noopener" }, "https://blog.csdn.net/qq_33212020/article/details/119747634")]),
+      h("p", {}, ["以及更详细的教程：", h("br"), h("a", { href: "https://blog.csdn.net/CingSyuan/article/details/155430662", target: "_blank", rel: "noopener" }, "https://blog.csdn.net/CingSyuan/article/details/155430662")]),
+    ]),
+    h("div", { class: "panel" }, [
+      h("h3", {}, "Microsoft Graph API 权限"),
+      h("p", { class: "muted" }, "请按照下列勾选。复制权限名时不要有多余的空格。"),
+      h("table", { class: "perm-table" }, [
+        h("thead", {}, h("tr", {}, [
+          h("th", { class: "perm-idx" }, "#"),
+          h("th", {}, "权限"),
+          h("th", {}, "登录调用"),
+          h("th", {}, "非登录调用"),
+        ])),
+        h("tbody", {}, perms.map((p, i) => permRow(i + 1, p[0], p[1], p[2]))),
+      ]),
     ]),
   ]);
 }
