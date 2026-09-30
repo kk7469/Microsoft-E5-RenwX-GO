@@ -10,6 +10,9 @@ import (
 	"e5renewx/internal/model"
 )
 
+// logLimit 是内存中保留的调用日志条数上限。日志不落盘，进程重启即清空。
+const logLimit = 200
+
 type Store struct {
 	mu       sync.RWMutex
 	path     string
@@ -74,9 +77,10 @@ func (s *Store) load() error {
 	}
 	for i := range snap.Accounts {
 		acc := snap.Accounts[i]
+		resetAccountRuntime(&acc)
 		s.accounts[acc.ID] = &acc
 	}
-	s.logs = snap.Logs
+	s.logs = []model.CallLog{} // 日志仅存内存，不从文件恢复
 	s.pardon = snap.LastPardon
 	s.report = snap.LastReport
 	// 一次性迁移：把历史快照中尚未随代码默认值更新的"默认字段"重置为当前代码内置默认值，
@@ -103,15 +107,9 @@ func (s *Store) saveLocked() error {
 	for _, a := range s.accounts {
 		accs = append(accs, *a)
 	}
-	logs := s.logs
-	if len(logs) > 2000 {
-		logs = logs[len(logs)-2000:]
-		s.logs = logs
-	}
 	snap := model.Snapshot{
 		Settings:   s.settings,
 		Accounts:   accs,
-		Logs:       logs,
 		LastPardon: s.pardon,
 		LastReport: s.report,
 	}
@@ -195,14 +193,45 @@ func (s *Store) MutateAccount(id string, fn func(*model.Account)) error {
 	return s.saveLocked()
 }
 
+// MutateRuntime 只修改账号的运行时状态（状态、成功/失败计数、令牌、调度时间等）。
+// 这些字段不落盘，因此无需写文件；账号配置变更请继续使用 MutateAccount。
+func (s *Store) MutateRuntime(id string, fn func(*model.Account)) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	a, ok := s.accounts[id]
+	if !ok {
+		return os.ErrNotExist
+	}
+	fn(a)
+	return nil
+}
+
+// resetAccountRuntime 把账号的运行时状态重置为初始值。
+// 这些字段不会从文件恢复；其中 Status 必须显式设为 running，
+// 否则调度器会因状态为空字符串而永不执行该账号。
+func resetAccountRuntime(a *model.Account) {
+	a.Status = model.StatusRunning
+	a.UpdatedAt = time.Time{}
+	a.LastRunAt = nil
+	a.NextRunAt = nil
+	a.PausedAt = nil
+	a.LastError = ""
+	a.SuccessCount = 0
+	a.FailCount = 0
+	a.ConsecutiveFail = 0
+	a.AccessToken = ""
+	a.RefreshToken = ""
+	a.TokenExpiry = time.Time{}
+}
+
 func (s *Store) AppendLog(log model.CallLog) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.logs = append(s.logs, log)
-	if len(s.logs) > 2000 {
-		s.logs = s.logs[len(s.logs)-2000:]
+	if len(s.logs) > logLimit {
+		s.logs = s.logs[len(s.logs)-logLimit:]
 	}
-	_ = s.saveLocked()
+	// 日志只保留在内存中，不落盘，进程重启即清空
 }
 
 func (s *Store) Logs(accountID string, limit int) []model.CallLog {

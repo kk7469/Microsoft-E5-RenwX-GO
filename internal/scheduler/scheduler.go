@@ -107,7 +107,7 @@ func (s *Scheduler) maybeAutoResume(now time.Time, settings model.Settings) {
 			continue
 		}
 		if now.Sub(*acc.PausedAt) >= time.Duration(hours)*time.Hour {
-			_ = s.store.MutateAccount(acc.ID, func(a *model.Account) {
+			_ = s.store.MutateRuntime(acc.ID, func(a *model.Account) {
 				a.Status = model.StatusRunning
 				a.ConsecutiveFail = 0
 				a.LastError = ""
@@ -174,7 +174,7 @@ func (s *Scheduler) runAccount(id string) {
 		s.recordFail(acc, "token", err.Error(), settings)
 		return
 	}
-	_ = s.store.MutateAccount(id, func(a *model.Account) {
+	_ = s.store.MutateRuntime(id, func(a *model.Account) {
 		a.AccessToken = acc.AccessToken
 		a.RefreshToken = acc.RefreshToken
 		a.TokenExpiry = acc.TokenExpiry
@@ -222,7 +222,7 @@ func (s *Scheduler) runAccount(id string) {
 	}
 
 	next := now.Add(randomInterval(settings.MinIntervalSec, settings.MaxIntervalSec))
-	_ = s.store.MutateAccount(id, func(a *model.Account) {
+	_ = s.store.MutateRuntime(id, func(a *model.Account) {
 		a.LastRunAt = &now
 		a.NextRunAt = &next
 		a.UpdatedAt = time.Now()
@@ -268,7 +268,7 @@ func (s *Scheduler) recordFail(acc *model.Account, kind, msg string, settings mo
 		CreatedAt: now,
 	})
 	next := now.Add(randomInterval(settings.MinIntervalSec, settings.MaxIntervalSec))
-	_ = s.store.MutateAccount(acc.ID, func(a *model.Account) {
+	_ = s.store.MutateRuntime(acc.ID, func(a *model.Account) {
 		a.LastRunAt = &now
 		a.NextRunAt = &next
 		a.FailCount++
