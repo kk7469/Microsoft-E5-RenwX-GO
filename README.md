@@ -4,12 +4,16 @@
 
 原项目地址：
 https://github.com/hongyonghan/Docker_Microsoft365_E5_Renew_X
+
 本项目地址：
 https://github.com/kk7469/microsoft-e5-renwx-go
+
 账号注册相关请参考博客：
 https://blog.csdn.net/qq_33212020/article/details/119747634
+
 更详细的教程：
 https://blog.csdn.net/CingSyuan/article/details/155430662
+
 
 具体权限请直接从“权限.txt”或容器中关于页面复制，分为登录和非登录两种，选其一就行，如果都选了“可能”会超出数量上限。
 
