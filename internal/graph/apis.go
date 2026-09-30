@@ -31,7 +31,6 @@ func Catalog() []model.APIDef {
 		{ID: "service-principals", Name: "服务主体", Method: "GET", Path: "/servicePrincipals?$top=5", Permission: "Application.Read.All", Modes: []string{"login", "app"}, Description: "读取服务主体"},
 		{ID: "directory-roles", Name: "目录角色", Method: "GET", Path: "/directoryRoles", Permission: "RoleManagement.Read.Directory", Modes: []string{"login", "app"}, Description: "读取目录角色"},
 		{ID: "devices", Name: "列出设备", Method: "GET", Path: "/devices?$top=5", Permission: "Device.Read.All", Modes: []string{"login", "app"}, Description: "读取设备"},
-		{ID: "audit-signins", Name: "登录日志", Method: "GET", Path: "/auditLogs/signIns?$top=5", Permission: "AuditLog.Read.All", Modes: []string{"login", "app"}, Description: "读取登录审计"},
 		{ID: "sharepoint-lists", Name: "站点列表", Method: "GET", Path: "/sites/root/lists", Permission: "Sites.Read.All", Modes: []string{"login", "app"}, Recommended: true, Description: "读取根站点列表"},
 		{ID: "drive-recent", Name: "最近文件", Method: "GET", Path: "/me/drive/recent", Permission: "Files.Read", Modes: []string{"login"}, Recommended: true, Description: "读取最近使用的文件"},
 		{ID: "drive-shared", Name: "与我共享", Method: "GET", Path: "/me/drive/sharedWithMe", Permission: "Files.Read", Modes: []string{"login"}, Recommended: true, Description: "读取共享文件"},

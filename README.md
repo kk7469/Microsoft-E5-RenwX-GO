@@ -12,11 +12,12 @@
 
 ## 说明
 
-已从 API 目录移除 7 个在 E5 开发者租户上稳定报错的接口，原因如下（不是程序 Bug）：
+已从 API 目录移除 8 个在 E5 开发者租户上稳定报错的接口，原因如下（不是程序 Bug）：
 
 - `用户头像` `/me/photo`：账号未设置头像时官方固定返回 **404**；租户限制头像访问时返回 **403**。
 - `邮件活跃报告` / `OneDrive 使用报告` `/reports/...`：返回 **403**。除了 `Reports.Read.All`，账号还必须被授予 Entra 管理角色（Reports Reader / Global Reader / Exchange Administrator 等），普通 E5 开发账号通常没有。
 - `安全告警` `/security/alerts_v2`：返回 **403**。需要 `SecurityAlert.Read.All`，且账号需具备 Security Reader / Global Reader 等角色，租户还需接入 Microsoft 365 Defender。
+- `登录日志` `/auditLogs/signIns`：返回 **403**。除了 `AuditLog.Read.All`，账号还必须具备 Global Reader / Security Reader / Security Administrator / Security Operator / Reports Reader 之一。
 - `读取聊天` `/me/chats`、`加入的团队` `/me/joinedTeams`、`在线状态` `/me/presence`：返回 **403**。微软官方确认：账号未被分配 **Teams 许可证**时，即便 `Chat.Read` / `Team.ReadBasic.All` / `Presence.Read` 已授权也会 403，分配许可证后即恢复正常。
 
 ## 功能
@@ -25,7 +26,7 @@
 - 多运行账号托管
 - 登录调用（ROPC：账号 + 密码 + 客户端 ID）
 - 非登录调用（client credentials：客户端 ID + 客户端机密）
-- 33 个 Microsoft Graph API，按模式随机抽取
+- 32 个 Microsoft Graph API，按模式随机抽取
 - 随机调用间隔 600–1500 秒
 - 随机邮件内容和 OneDrive 上传内容
 - 连续失败自动暂停，到期自动恢复

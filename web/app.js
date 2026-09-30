@@ -251,7 +251,7 @@ function accountRow(a) {
     h("td", {}, a.name),
     h("td", {}, a.upn),
     h("td", {}, a.mode === "app" ? "非登录调用" : "登录调用"),
-    h("td", {}, [statusBadge(a.status), a.lastError ? h("div", { class: "muted" }, a.lastError.slice(0, 80)) : null]),
+    h("td", {}, [statusBadge(a.status), a.lastError ? h("div", { class: "muted" }, a.lastError.slice(0, 30)) : null]),
     h("td", {}, formatTime(a.nextRunAt)),
     h("td", {}, `${a.successCount} / ${a.failCount}`),
     h("td", {}, h("div", { class: "row" }, [
@@ -499,7 +499,6 @@ function aboutPage() {
   ]);
   const perms = [
     ["Application.Read.All", true, true],
-    ["AuditLog.Read.All", true, true],
     ["Calendars.Read", true, true],
     ["Contacts.Read", true, false],
     ["Device.Read.All", true, true],
@@ -546,10 +545,30 @@ function aboutPage() {
   ]);
 }
 
+// 找出当前真正可滚动的元素（如添加/编辑页里的 .api-list）
+function scrollables() {
+  return Array.from(app.querySelectorAll("*")).filter((el) => el.scrollHeight > el.clientHeight + 1);
+}
+
+// render 会整体重建 DOM，而 15 秒自动刷新也会调用它。
+// 因此重建前先记录滚动位置和输入焦点，重建后还原，
+// 否则在编辑页滚动 Graph API 列表时会被定时刷新拉回顶部，正在输入的内容也会丢失光标。
 function render() {
   if (state.settings?.siteName) {
     document.title = state.settings.siteName;
   }
+  const savedScroll = scrollables().map((el) => el.scrollTop);
+  const pageScroll = window.scrollY || document.documentElement.scrollTop || 0;
+  const active = document.activeElement;
+  let savedFocus = null;
+  if (active && app.contains(active)) {
+    const fields = Array.from(app.querySelectorAll("input, select, textarea"));
+    const idx = fields.indexOf(active);
+    if (idx >= 0) {
+      savedFocus = { idx, start: active.selectionStart, end: active.selectionEnd };
+    }
+  }
+
   app.innerHTML = "";
   if (!state.user) {
     app.append(loginView());
@@ -558,6 +577,22 @@ function render() {
     app.append(layout((pages[state.page] || homePage)()));
   }
   if (state.toast) app.append(h("div", { class: "toast" }, state.toast));
+
+  scrollables().forEach((el, i) => {
+    if (savedScroll[i] != null) el.scrollTop = savedScroll[i];
+  });
+  window.scrollTo(0, pageScroll);
+  if (savedFocus) {
+    const el = Array.from(app.querySelectorAll("input, select, textarea"))[savedFocus.idx];
+    if (el) {
+      el.focus();
+      try {
+        el.setSelectionRange(savedFocus.start, savedFocus.end);
+      } catch (e) {
+        /* number/checkbox 等不支持选区，忽略 */
+      }
+    }
+  }
 }
 
 boot();

@@ -29,7 +29,38 @@ type APIDef struct {
 	Description string   `json:"description"`
 }
 
+// Account 是内存中使用的完整账号结构，同时也是 Web 接口返回的结构，
+// 因此所有字段都要能正常序列化。
+// 注意：运行时字段（状态、计数、令牌、调度时间）只在内存中维护，不写入文件，
+// 落盘由 PersistedAccount 负责。
 type Account struct {
+	ID              string        `json:"id"`
+	Name            string        `json:"name"`
+	UPN             string        `json:"upn"`
+	ClientID        string        `json:"clientId"`
+	Secret          string        `json:"secret"`
+	Tenant          string        `json:"tenant"`
+	Mode            AuthMode      `json:"mode"`
+	APIList         []string      `json:"apiList"`
+	Status          AccountStatus `json:"status"`
+	NotifyEmail     string        `json:"notifyEmail"`
+	CreatedAt       time.Time     `json:"createdAt"`
+	UpdatedAt       time.Time     `json:"updatedAt"`
+	LastRunAt       *time.Time    `json:"lastRunAt,omitempty"`
+	NextRunAt       *time.Time    `json:"nextRunAt,omitempty"`
+	PausedAt        *time.Time    `json:"pausedAt,omitempty"`
+	LastError       string        `json:"lastError,omitempty"`
+	SuccessCount    int           `json:"successCount"`
+	FailCount       int           `json:"failCount"`
+	ConsecutiveFail int           `json:"consecutiveFail"`
+	AccessToken     string        `json:"accessToken,omitempty"`
+	RefreshToken    string        `json:"refreshToken,omitempty"`
+	TokenExpiry     time.Time     `json:"tokenExpiry,omitempty"`
+}
+
+// PersistedAccount 是写入 store.json 的账号结构，只保留配置字段。
+// 运行时字段（状态、计数、令牌、调度时间）不落盘，进程重启后重置。
+type PersistedAccount struct {
 	ID          string    `json:"id"`
 	Name        string    `json:"name"`
 	UPN         string    `json:"upn"`
@@ -40,20 +71,6 @@ type Account struct {
 	APIList     []string  `json:"apiList"`
 	NotifyEmail string    `json:"notifyEmail"`
 	CreatedAt   time.Time `json:"createdAt"`
-
-	// 以下为运行时状态：仅保存在内存中，不写入文件，进程重启后全部重置
-	Status          AccountStatus `json:"-"`
-	UpdatedAt       time.Time     `json:"-"`
-	LastRunAt       *time.Time    `json:"-"`
-	NextRunAt       *time.Time    `json:"-"`
-	PausedAt        *time.Time    `json:"-"`
-	LastError       string        `json:"-"`
-	SuccessCount    int           `json:"-"`
-	FailCount       int           `json:"-"`
-	ConsecutiveFail int           `json:"-"`
-	AccessToken     string        `json:"-"`
-	RefreshToken    string        `json:"-"`
-	TokenExpiry     time.Time     `json:"-"`
 }
 
 type CallLog struct {
@@ -93,8 +110,8 @@ type Settings struct {
 }
 
 type Snapshot struct {
-	Settings   Settings  `json:"settings"`
-	Accounts   []Account `json:"accounts"`
-	LastPardon time.Time `json:"lastPardon"`
-	LastReport time.Time `json:"lastReport"`
+	Settings   Settings           `json:"settings"`
+	Accounts   []PersistedAccount `json:"accounts"`
+	LastPardon time.Time          `json:"lastPardon"`
+	LastReport time.Time          `json:"lastReport"`
 }

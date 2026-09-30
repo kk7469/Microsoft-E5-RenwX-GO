@@ -76,7 +76,7 @@ func (s *Store) load() error {
 		s.settings = snap.Settings
 	}
 	for i := range snap.Accounts {
-		acc := snap.Accounts[i]
+		acc := fromPersisted(snap.Accounts[i])
 		resetAccountRuntime(&acc)
 		s.accounts[acc.ID] = &acc
 	}
@@ -103,9 +103,9 @@ func (s *Store) load() error {
 }
 
 func (s *Store) saveLocked() error {
-	accs := make([]model.Account, 0, len(s.accounts))
+	accs := make([]model.PersistedAccount, 0, len(s.accounts))
 	for _, a := range s.accounts {
-		accs = append(accs, *a)
+		accs = append(accs, toPersisted(a))
 	}
 	snap := model.Snapshot{
 		Settings:   s.settings,
@@ -222,6 +222,38 @@ func resetAccountRuntime(a *model.Account) {
 	a.AccessToken = ""
 	a.RefreshToken = ""
 	a.TokenExpiry = time.Time{}
+}
+
+// toPersisted 把内存中的账号转成只含配置字段的落盘结构。
+func toPersisted(a *model.Account) model.PersistedAccount {
+	return model.PersistedAccount{
+		ID:          a.ID,
+		Name:        a.Name,
+		UPN:         a.UPN,
+		ClientID:    a.ClientID,
+		Secret:      a.Secret,
+		Tenant:      a.Tenant,
+		Mode:        a.Mode,
+		APIList:     a.APIList,
+		NotifyEmail: a.NotifyEmail,
+		CreatedAt:   a.CreatedAt,
+	}
+}
+
+// fromPersisted 把落盘结构还原为内存中的账号，运行时字段留空由 resetAccountRuntime 初始化。
+func fromPersisted(p model.PersistedAccount) model.Account {
+	return model.Account{
+		ID:          p.ID,
+		Name:        p.Name,
+		UPN:         p.UPN,
+		ClientID:    p.ClientID,
+		Secret:      p.Secret,
+		Tenant:      p.Tenant,
+		Mode:        p.Mode,
+		APIList:     p.APIList,
+		NotifyEmail: p.NotifyEmail,
+		CreatedAt:   p.CreatedAt,
+	}
 }
 
 func (s *Store) AppendLog(log model.CallLog) {
