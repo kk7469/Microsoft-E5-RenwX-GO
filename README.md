@@ -10,6 +10,8 @@
 
 以及更详细的教程： <https://blog.csdn.net/CingSyuan/article/details/155430662>
 
+需要哪些权限见“关于”页面。
+
 ## 说明
 
 已从 API 目录移除 8 个在 E5 开发者租户上稳定报错的接口，原因如下（不是程序 Bug）：
